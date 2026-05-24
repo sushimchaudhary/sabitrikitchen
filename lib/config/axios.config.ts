@@ -1,48 +1,22 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 
-const BASE_URL = "http://localhost:9000/api/v1";
-
 const axiosInstance = axios.create({
-  baseURL: BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-  withCredentials: true, 
+  baseURL: "https://test.edifynepal.com/api", // तपाईँको ब्याकइन्ड बेस URL
 });
 
-
-// axiosInstance.interceptors.request.use((config) => {
-//   const token = Cookies.get("auth_token");
-//   if
-// })
-
+// रिक्वेस्ट पठाउनु अघि टोकन इन्जेक्ट गर्ने इन्टरसेप्टर
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = Cookies.get("auth_token");
-    
-
-    const url = config.url?.toLowerCase() || "";
-    const isAuthRoute = url.includes("/login") || url.includes("/register");
-
-    if (token && !isAuthRoute) {
+    if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
-    } else {
-      
-      delete config.headers["Authorization"];
     }
-    
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    return Promise.reject(error);
+  }
 );
-
-
-export const publicAxios = axios.create({
-  baseURL: BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
 
 export default axiosInstance;

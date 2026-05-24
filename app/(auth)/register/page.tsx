@@ -36,7 +36,7 @@ export default function RegisterPage() {
     setIsLoading(true);
     try {
       const payload = { ...data, gender };
-      await axiosInstance.post("/auth/register", payload);
+      await axiosInstance.post("/auth/register-editor", payload);
       toast.success(<strong>Registration Successful!</strong>, {
         description: "Your account has been created instantly.",
       });

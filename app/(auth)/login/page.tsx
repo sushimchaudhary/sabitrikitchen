@@ -1,19 +1,28 @@
 "use client";
 
 import React, { useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, SubmitHandler } from "react-hook-form";
 import { Loader2, X, Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ConfigProvider } from "antd";
 import { toast } from "sonner";
+import Cookies from "js-cookie";
 import axiosInstance from "@/lib/config/axios.config";
+
+// १. Form Data को लागि स्ट्रिक्ट Type Interface थपिएको
+interface LoginFormInputs {
+  sabitriId: string;
+  password: string;
+  rememberMe: boolean;
+}
 
 export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const { control, handleSubmit, formState: { errors } } = useForm({
+  // २. useForm मा Type Interface एप्लाई गरिएको
+  const { control, handleSubmit, formState: { errors } } = useForm<LoginFormInputs>({
     defaultValues: {
       sabitriId: "",
       password: "",
@@ -21,25 +30,58 @@ export default function LoginPage() {
     },
   });
 
-  const onSubmit = async (data: any) => {
+  // 💡 पुराना म्यानुअल useState हरू हटाइयो (किनकी react-hook-form ले नै यसलाई म्यानेज गर्छ)
+
+  // ३. React Hook Form को बुझाई अनुसार onSubmit लाई अपडेट गरियो
+  const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
+    if (isLoading) return;
+
     setIsLoading(true);
     try {
+      Cookies.remove("auth_token");
+      Cookies.remove("user_info"); // पुरानो युजर डेटा क्लियर गर्ने
+
+      // data अब्जेक्टबाट सिधै भ्यालुहरू तानिएको
       const payload = {
         username: data.sabitriId,
         password: data.password,
       };
 
-      const response = await axiosInstance.post("/auth/login", payload);
+      // १. लगिन रिक्वेस्ट
+      const response = await axiosInstance.post("/auth/login/", payload);
       
-      // Token structure dynamic handler
-      if (response.data?.token) {
-        localStorage.setItem("token", response.data.token);
+      const token = response.data?.access; 
+      const userData = response.data?.user; // 🌟 ब्याकइन्डको user अब्जेक्ट
+
+      if (!token) {
+        throw new Error("Access token not found in response.");
       }
 
+      // २. कुकिजमा access token सेभ गर्ने
+      Cookies.set("auth_token", token, { expires: 1, sameSite: "strict" });
+      
+      // 🌟 ब्याकइन्डले दिएको user अब्जेक्टलाई JSON string बनाएर कुकीमा सेभ गर्ने
+      if (userData) {
+        Cookies.set("user_info", JSON.stringify(userData), { expires: 1, sameSite: "strict" });
+      }
+
+      if (response.data?.refresh) {
+        Cookies.set("refresh_token", response.data.refresh, { expires: 7, sameSite: "strict" });
+      }
+
+      // ३. हेडर अपडेट
+      axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+      // ४. टोस्ट म्यासेज
+      const username = userData?.username || "User";
       toast.success(<strong>Welcome Back!</strong>, {
-        description: "Login successful.",
+        description: `Logged in successfully as ${username}.`,
       });
+
+      // ५. ड्यासबोर्डमा रिडाइरेक्ट र फ्रेस डेटा लोड
       router.push("/dashboard");
+      router.refresh();
+      
     } catch (exception: any) {
       const errorMsg = exception.response?.data?.message || "Invalid credentials. Try again.";
       toast.error(<strong>Login Failed !!</strong>, { description: errorMsg });
@@ -59,7 +101,7 @@ export default function LoginPage() {
       }}
     >
       <div className="h-screen w-full flex items-center justify-center bg-gray-900/40 font-sans p-2 sm:p-4 overflow-hidden">
-        {/* Main Split Container matching Register layout */}
+        {/* Main Split Container */}
         <div className="w-full max-w-[900px] h-[90vh] max-h-[500px] bg-white rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden relative">
           
           {/* Close Button */}
@@ -83,7 +125,7 @@ export default function LoginPage() {
               </h2>
               
               <p className="text-white/90 text-xs leading-relaxed max-w-[240px]">
-                Sign in to manage your bills, top-up wallets, and handle transactions instantly.
+                Sign in to manage your wallets, top-up bills, and handle transactions instantly.
               </p>
             </div>
 
@@ -104,6 +146,7 @@ export default function LoginPage() {
               </p>
             </div>
 
+            {/* ४. handleSubmit भित्र सिधै onSubmit पास गरियो */}
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
               
               {/* Sabitri ID / Mobile field */}
@@ -123,7 +166,7 @@ export default function LoginPage() {
                   )}
                 />
                 {errors.sabitriId && (
-                  <p className="text-[10px] text-red-500 mt-0.5">{errors.sabitriId.message as string}</p>
+                  <p className="text-[10px] text-red-500 mt-0.5">{errors.sabitriId.message}</p>
                 )}
               </div>
 
@@ -162,16 +205,25 @@ export default function LoginPage() {
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="text-[10px] text-red-500 mt-0.5">{errors.password.message as string}</p>
+                  <p className="text-[10px] text-red-500 mt-0.5">{errors.password.message}</p>
                 )}
               </div>
 
               {/* Remember Me Checkbox */}
               <div className="flex items-center gap-2 pt-0.5">
-                <input
-                  type="checkbox"
-                  id="rememberMe"
-                  className="w-3.5 h-3.5 rounded border-gray-300 text-[#F67F02] focus:ring-[#F67F02]"
+                <Controller
+                  control={control}
+                  name="rememberMe"
+                  render={({ field: { value, onChange, ...field } }) => (
+                    <input
+                      type="checkbox"
+                      id="rememberMe"
+                      checked={value}
+                      onChange={(e) => onChange(e.target.checked)}
+                      className="w-3.5 h-3.5 rounded border-gray-300 text-[#F67F02] focus:ring-[#F67F02]"
+                      {...field}
+                    />
+                  )}
                 />
                 <label htmlFor="rememberMe" className="text-[11px] text-gray-500 font-medium select-none cursor-pointer">
                   Keep me logged in

@@ -1,14 +1,15 @@
-// components/MobileAppView.tsx
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Wallet, ArrowDownToLine, ArrowUpFromLine, Building2, Globe,
   Smartphone, Zap, Droplets, Wifi, LandmarkIcon, AlertCircle,
   GraduationCap, ChevronRight, Plane, Globe2, Hotel, Bus,
   Film, Cable, CalendarDays, Shield, Home, FileText,
   HelpCircle, LayoutGrid, Search, Bell, Bot, QrCode,
-  Eye, EyeOff, Star
+  Eye, EyeOff, Star, Users2
 } from "lucide-react";
+import Cookies from "js-cookie";
+import { useRouter } from "next/navigation";
 
 const services = {
   utility: [
@@ -65,6 +66,42 @@ function ServiceGrid({ items }: { items: { icon: React.ElementType; label: strin
 export default function MobileAppView() {
   const [balanceVisible, setBalanceVisible] = useState(false);
   const [activeTab, setActiveTab] = useState("home");
+  const router = useRouter();
+
+  // ब्याकइन्ड रेस्पोन्सको टाइप संरचना
+  const [user, setUser] = useState<{
+    id: number;
+    username: string;
+    email: string;
+    first_name: string;
+    is_staff: boolean;
+    is_superuser: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    const userInfoRaw = Cookies.get("user_info");
+    if (userInfoRaw) {
+      try {
+        const parsedUser = JSON.parse(userInfoRaw);
+        setUser(parsedUser);
+      } catch (err) {
+        console.error("Error parsing user context:", err);
+      }
+    }
+  }, []);
+
+  // ✅ १. यदि is_superuser = true छ भने मात्र एडमिन प्यानल देखिने लजिक
+  const isSuperAdmin = user?.is_superuser === true;
+
+  // ✅ २. डिस्प्ले नेममा अनिवार्य ब्याकइन्डको "username" मात्र देखाउने
+  const displayName = user?.username || "Guest User";
+
+  // युजरनेमको पहिलो दुई अक्षर लोगोमा राख्ने फङ्सन (जस्तै: superadmin -> SU)
+  const getInitials = (name: string) => {
+    const cleaned = name.trim();
+    if (!cleaned) return "GU";
+    return cleaned.slice(0, 2).toUpperCase();
+  };
 
   return (
     <div className="w-full min-h-screen bg-white flex flex-col relative">
@@ -73,11 +110,23 @@ export default function MobileAppView() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center border-2 border-white/40">
-              <span className="text-white font-bold text-sm">SK</span>
+              <span className="text-white font-bold text-sm">
+                {getInitials(displayName)}
+              </span>
             </div>
             <div>
-              <p className="text-white/70 text-[10px]">Welcome back</p>
-              <p className="text-white font-bold text-base">Hi, Sushim 👋</p>
+              <div className="text-white/70 text-[10px] flex items-center gap-1">
+                Welcome back 
+                {/* एडमिन ट्याग */}
+                {isSuperAdmin && (
+                  <span className="bg-red-600 text-white font-extrabold px-1 rounded text-[8px]">
+                    Admin Panel
+                  </span>
+                )}
+              </div>
+              <h2 className="text-white font-bold text-base leading-tight">
+                Hi, {displayName}
+              </h2>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -132,17 +181,43 @@ export default function MobileAppView() {
         </div>
       </div>
 
-      {/* Scrollable Main Content */}
+      {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto bg-gray-50 pb-24">
         <div className="space-y-3 p-3">
+          
+          {/* ✅ is_superuser === true हुँदा मात्र रेंडर हुने कार्ड ग्रिड */}
+          {isSuperAdmin && (
+            <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-100 rounded-2xl p-4 shadow-sm">
+              <h3 className="font-extrabold text-red-700 text-xs tracking-wider uppercase mb-3 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
+                Administrative Control Panel
+              </h3>
+              <div className="grid grid-cols-4 gap-y-5 gap-x-2 px-1">
+                <button 
+                  onClick={() => router.push("/admin/users")} 
+                  className="flex flex-col items-center gap-1.5 group"
+                >
+                  <div className="w-14 h-14 rounded-2xl bg-white border border-red-200 shadow-sm flex items-center justify-center group-active:bg-red-600 group-active:text-white transition-colors">
+                    <Users2 className="w-6 h-6 text-red-600 group-active:text-white" strokeWidth={1.5} />
+                  </div>
+                  <span className="text-[10px] text-gray-800 text-center font-bold leading-tight whitespace-pre-line">
+                    Manage\nUsers
+                  </span>
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="bg-white rounded-2xl p-4 shadow-sm">
             <h3 className="font-bold text-gray-800 text-sm mb-4">Utility & Bill Payments</h3>
             <ServiceGrid items={services.utility} />
           </div>
+          
           <div className="bg-white rounded-2xl p-4 shadow-sm">
             <h3 className="font-bold text-gray-800 text-sm mb-4">Travels & Ticketing</h3>
             <ServiceGrid items={services.travel} />
           </div>
+
           <div className="bg-white rounded-2xl p-4 shadow-sm">
             <h3 className="font-bold text-gray-800 text-sm mb-4">Insurance</h3>
             <div className="grid grid-cols-4 gap-y-5 gap-x-2 px-1">
@@ -163,7 +238,7 @@ export default function MobileAppView() {
         </div>
       </div>
 
-      {/* Navigation bar */}
+      {/* Footer Nav */}
       <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 pb-5 pt-2 flex items-center justify-around z-50">
         {[
           { id: "home", icon: Home, label: "Home" },
