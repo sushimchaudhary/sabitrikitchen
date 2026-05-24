@@ -1,0 +1,194 @@
+// components/MobileAppView.tsx
+"use client";
+import { useState } from "react";
+import {
+  Wallet, ArrowDownToLine, ArrowUpFromLine, Building2, Globe,
+  Smartphone, Zap, Droplets, Wifi, LandmarkIcon, AlertCircle,
+  GraduationCap, ChevronRight, Plane, Globe2, Hotel, Bus,
+  Film, Cable, CalendarDays, Shield, Home, FileText,
+  HelpCircle, LayoutGrid, Search, Bell, Bot, QrCode,
+  Eye, EyeOff, Star
+} from "lucide-react";
+
+const services = {
+  utility: [
+    { icon: Smartphone, label: "Topup\n& Data" },
+    { icon: Zap, label: "Electricity" },
+    { icon: Droplets, label: "Khanepani" },
+    { icon: Wifi, label: "Internet" },
+    { icon: LandmarkIcon, label: "Govt.\nPayment" },
+    { icon: AlertCircle, label: "Traffic Fine\nPayment" },
+    { icon: GraduationCap, label: "Education\nFee" },
+  ],
+  travel: [
+    { icon: Plane, label: "Airlines" },
+    { icon: Globe2, label: "Intl Airlines" },
+    { icon: Hotel, label: "Hotels" },
+    { icon: Bus, label: "Bus Ticket" },
+    { icon: Film, label: "Movies" },
+    { icon: Cable, label: "Cable Car" },
+    { icon: CalendarDays, label: "Events" },
+  ],
+  insurance: [
+    { icon: Shield, label: "Life\nInsurance" },
+    { icon: Shield, label: "Health\nInsurance" },
+    { icon: Shield, label: "Vehicle\nInsurance" },
+    { icon: Shield, label: "Travel\nInsurance" },
+  ],
+};
+
+function ServiceGrid({ items }: { items: { icon: React.ElementType; label: string }[] }) {
+  const visible = items.slice(0, 7);
+  return (
+    <div className="grid grid-cols-4 gap-y-5 gap-x-2 px-1">
+      {visible.map((s, i) => {
+        const Icon = s.icon;
+        return (
+          <button key={i} className="flex flex-col items-center gap-1.5 group">
+            <div className="w-14 h-14 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center group-active:bg-orange-50 group-active:border-[#f67f02] transition-colors">
+              <Icon className="w-6 h-6 text-gray-600 group-active:text-[#f67f02]" strokeWidth={1.5} />
+            </div>
+            <span className="text-[10px] text-gray-600 text-center leading-tight whitespace-pre-line font-medium">{s.label}</span>
+          </button>
+        );
+      })}
+      <button className="flex flex-col items-center gap-1.5 group">
+        <div className="w-14 h-14 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center group-active:bg-[#f67f02] transition-colors">
+          <ChevronRight className="w-5 h-5 text-[#f67f02]" strokeWidth={2} />
+        </div>
+        <span className="text-[10px] text-gray-400 text-center leading-tight font-medium">More</span>
+      </button>
+    </div>
+  );
+}
+
+export default function MobileAppView() {
+  const [balanceVisible, setBalanceVisible] = useState(false);
+  const [activeTab, setActiveTab] = useState("home");
+
+  return (
+    <div className="w-full min-h-screen bg-white flex flex-col relative">
+      {/* Header */}
+      <div className="bg-[#f67f02] px-4 pt-6 pb-4 shrink-0">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center border-2 border-white/40">
+              <span className="text-white font-bold text-sm">SK</span>
+            </div>
+            <div>
+              <p className="text-white/70 text-[10px]">Welcome back</p>
+              <p className="text-white font-bold text-base">Hi, Sushim 👋</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center"><Search className="w-4 h-4 text-white" /></button>
+            <button className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center relative">
+              <Bell className="w-4 h-4 text-white" />
+              <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-500 rounded-full border border-white text-[7px] text-white flex items-center justify-center font-bold">3</span>
+            </button>
+            <button className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center"><Bot className="w-4 h-4 text-white" /></button>
+          </div>
+        </div>
+
+        {/* Balance Card */}
+        <div className="bg-white rounded-2xl px-4 py-3 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center"><Wallet className="w-5 h-5 text-[#f67f02]" /></div>
+              <div>
+                <p className="text-gray-400 text-[10px]">NPR</p>
+                <p className="text-gray-800 font-bold text-base">{balanceVisible ? "12,450.00" : "XXXX.XX"}</p>
+                <p className="text-gray-400 text-[10px]">Balance</p>
+              </div>
+            </div>
+            <button onClick={() => setBalanceVisible(!balanceVisible)} className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
+              {balanceVisible ? <Eye className="w-4 h-4 text-gray-500" /> : <EyeOff className="w-4 h-4 text-gray-500" />}
+            </button>
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center"><Star className="w-5 h-5 text-[#f67f02]" /></div>
+              <div>
+                <p className="text-gray-800 font-bold text-base">XXXX.XX</p>
+                <p className="text-gray-400 text-[10px]">Reward Points</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-[#f67f02]" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-4 gap-2 mt-3 pt-3 border-t border-gray-100">
+            {[
+              { icon: ArrowDownToLine, label: "Load\nMoney" },
+              { icon: ArrowUpFromLine, label: "Send\nMoney" },
+              { icon: Building2, label: "Bank\nTransfer" },
+              { icon: Globe, label: "Remittance" },
+            ].map((a, i) => (
+              <button key={i} className="flex flex-col items-center gap-1 group">
+                <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center group-active:bg-[#f67f02] transition-colors">
+                  <a.icon className="w-5 h-5 text-[#f67f02] group-active:text-white" strokeWidth={1.5} />
+                </div>
+                <span className="text-[9px] text-gray-500 text-center leading-tight whitespace-pre-line font-medium">{a.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Scrollable Main Content */}
+      <div className="flex-1 overflow-y-auto bg-gray-50 pb-24">
+        <div className="space-y-3 p-3">
+          <div className="bg-white rounded-2xl p-4 shadow-sm">
+            <h3 className="font-bold text-gray-800 text-sm mb-4">Utility & Bill Payments</h3>
+            <ServiceGrid items={services.utility} />
+          </div>
+          <div className="bg-white rounded-2xl p-4 shadow-sm">
+            <h3 className="font-bold text-gray-800 text-sm mb-4">Travels & Ticketing</h3>
+            <ServiceGrid items={services.travel} />
+          </div>
+          <div className="bg-white rounded-2xl p-4 shadow-sm">
+            <h3 className="font-bold text-gray-800 text-sm mb-4">Insurance</h3>
+            <div className="grid grid-cols-4 gap-y-5 gap-x-2 px-1">
+              {services.insurance.map((s, i) => {
+                const Icon = s.icon;
+                const colors = ["bg-green-50 text-green-600", "bg-blue-50 text-blue-600", "bg-purple-50 text-purple-600", "bg-red-50 text-red-600"];
+                return (
+                  <button key={i} className="flex flex-col items-center gap-1.5 group">
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border border-gray-100 ${colors[i].split(' ')[0]}`}>
+                      <Icon className={`w-6 h-6 ${colors[i].split(' ')[1]}`} strokeWidth={1.5} />
+                    </div>
+                    <span className="text-[10px] text-gray-600 text-center leading-tight whitespace-pre-line font-medium">{s.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation bar */}
+      <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 pb-5 pt-2 flex items-center justify-around z-50">
+        {[
+          { id: "home", icon: Home, label: "Home" },
+          { id: "statement", icon: FileText, label: "Statement" },
+          { id: "qr", icon: QrCode, label: "" },
+          { id: "support", icon: HelpCircle, label: "Support" },
+          { id: "more", icon: LayoutGrid, label: "More" },
+        ].map((tab) => {
+          const Icon = tab.icon;
+          if (tab.id === "qr") {
+            return (
+              <button key={tab.id} className="-mt-8 w-16 h-16 rounded-full bg-[#f67f02] flex items-center justify-center shadow-lg shadow-orange-300 border-4 border-white">
+                <QrCode className="w-7 h-7 text-white" />
+              </button>
+            );
+          }
+          const isActive = activeTab === tab.id;
+          return (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className="flex flex-col items-center gap-0.5 px-2 py-1 min-w-[50px]">
+              <Icon className={`w-6 h-6 ${isActive ? "text-[#f67f02]" : "text-gray-400"}`} strokeWidth={isActive ? 2 : 1.5} />
+              <span className={`text-[10px] font-medium ${isActive ? "text-[#f67f02]" : "text-gray-400"}`}>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
