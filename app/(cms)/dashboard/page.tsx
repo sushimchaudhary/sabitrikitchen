@@ -4,7 +4,7 @@ import MobileAppView from "@/app/components/MobileAppView";
 import { useIsStandalone } from "@/app/hooks/useIsStandalone";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie"; // 🌟 js-cookie इम्पोर्ट गरियो
+import Cookies from "js-cookie";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -14,30 +14,56 @@ export default function DashboardPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null); 
 
   useEffect(() => {
-    // 🔐 १. टोकन चेकिङ र अथेन्टिकेसन लजिक (लगिन पेजसँग म्याच गराइएको)
-    const token = Cookies.get("auth_token"); 
+    // 🛡️ १. कडा अथेन्टिकेसन चेकर फङ्सन
+    const checkAuth = () => {
+      const token = Cookies.get("auth_token"); 
 
-    console.log("=== DASHBOARD AUTH CHECK ===");
-    console.log("Token from Cookie:", token ? "Found ✅" : "NOT FOUND ❌");
+      console.log("=== DASHBOARD AUTH CHECK ===");
+      console.log("Token from Cookie:", token ? "Found ✅" : "NOT FOUND ❌");
 
-    if (!token) {
-      // टोकन छैन भने कन्सोलमा म्यासेज फाल्ने र लगइनमा रिडाइरेक्ट गर्ने
-      console.warn("No auth_token found in cookies. Redirecting to /login...");
-      setIsAuthenticated(false);
-      router.replace("/login"); 
-      return;
+      if (!token) {
+        console.warn("No auth_token found. Redirecting to /login...");
+        setIsAuthenticated(false);
+        router.replace("/login"); 
+        
+        // 🌟 यदि ब्याक गरेर आएको विन्डो हो भने कडा रिडाइरेक्ट सुनिश्चित गर्न विन्डो नै ओभरराइड गरिदिने
+        window.location.href = "/login";
+        return false;
+      }
+      
+      setIsAuthenticated(true);
+      return true;
+    };
+
+    // पहिलो पटक पेज लोड हुँदा चेक गर्ने
+    const hasToken = checkAuth();
+
+    // 📱 २. स्क्रिन साइज चेकिङ लजिक (टोकन छ भने मात्र सेट गर्ने)
+    if (hasToken) {
+      const checkSize = () => setIsMobileResponsive(window.innerWidth < 768);
+      checkSize();
+      window.addEventListener("resize", checkSize);
+      
+      return () => window.removeEventListener("resize", checkSize);
     }
-
-    // टोकन छ भने मात्र ड्यासबोर्ड एक्सेस दिने
-    setIsAuthenticated(true);
-
-    // 📱 २. स्क्रीन साइज चेकिङ लजिक
-    const checkSize = () => setIsMobileResponsive(window.innerWidth < 768);
-    checkSize();
-    window.addEventListener("resize", checkSize);
-    
-    return () => window.removeEventListener("resize", checkSize);
   }, [router]);
+
+  // 🌟 ३. म्याजिक लजिक: मोबाइलको BACK BUTTON र ब्राउजर क्यास (bfcache) ह्यान्डलर
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      // यदि पेज ब्राउजरको मेमोरी/क्यास (Back Button थिचेर) बाट लोड भएको हो भने
+      if (event.persisted || (typeof window !== "undefined" && window.performance && window.performance.navigation.type === 2)) {
+        const token = Cookies.get("auth_token");
+        if (!token) {
+          console.log("Back button cache detected without token. Redirecting...");
+          window.location.replace("/login");
+        }
+      }
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, []);
 
   // जबसम्म टोकन चेक भएर सकिँदैन, तबसम्म लोडर देखाउने
   if (isAuthenticated === null) {
