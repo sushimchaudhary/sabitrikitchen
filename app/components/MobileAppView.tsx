@@ -7,7 +7,8 @@ import {
   Film, Cable, CalendarDays, Shield, Home, FileText,
   UserCheck, LayoutGrid, Search, Bell, Bot, QrCode,
   Eye, EyeOff, Star, Users2, LogOut, User, Settings, Upload, CheckCircle2, Clock, XCircle,
-  MessageSquare, Calendar, Trash2, Save, AlertTriangle
+  MessageSquare, Calendar, Trash2, Save, AlertTriangle,
+  HelpCircle
 } from "lucide-react";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
@@ -681,7 +682,7 @@ export default function MobileAppView() {
         )}
       </div>
 
-      {/* Fixed Bottom Navigation Bar */}
+      {/* Fixed Bottom Navigation Bar
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 pb-5 pt-2 flex items-center justify-around z-50 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
         {[
           { id: "home", icon: Home, label: "Home" },
@@ -710,7 +711,64 @@ export default function MobileAppView() {
             </button>
           );
         })}
-      </div>
+      </div> */}
+
+
+      {/* Fixed Bottom Navigation Bar */}
+<div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 pb-5 pt-2 flex items-center justify-around z-50 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+  {[
+    { id: "home", icon: Home, label: "Home" },
+    { id: "statement", icon: FileText, label: "Statement" },
+    { id: "qr", icon: QrCode, label: "" },
+    
+    // 🛠️ Superadmin हो भने 'Support' देखिने, नत्र साधारण युजरलाई 'KYC' देखिने व्यवस्था
+   
+...(isSuperAdmin
+  ? [{ id: "support", icon: HelpCircle, label: "Support" }]
+  : [
+      { 
+        id: "kyc", 
+        icon: UserCheck, 
+        label: kycStatus === "NOT_SUBMITTED" ? "KYC" : "View KYC" 
+      }
+    ]
+),
+
+    { id: "more", icon: LayoutGrid, label: "More" },
+  ].map((tab) => {
+    const Icon = tab.icon;
+    
+    // QR Code Button (Floating Center Action)
+    if (tab.id === "qr") {
+      return (
+        <button 
+          key={tab.id} 
+          onClick={() => setActiveTab("qr")} // QR क्लिक गर्दा पनि स्टेट चेन्ज वा मोडल खोल्ने
+          className="-mt-8 w-16 h-16 rounded-full bg-[#f67f02] flex items-center justify-center shadow-lg shadow-orange-300 border-4 border-white active:scale-95 transition-transform"
+        >
+          <QrCode className="w-7 h-7 text-white" />
+        </button>
+      );
+    }
+    
+    const isActive = activeTab === tab.id;
+    return (
+      <button 
+        key={tab.id} 
+        onClick={() => setActiveTab(tab.id)} 
+        className="flex flex-col items-center gap-0.5 px-2 py-1 min-w-[50px] active:scale-95 transition-transform"
+      >
+        <Icon 
+          className={`w-5.5 h-5.5 transition-colors ${isActive ? "text-[#f67f02]" : "text-gray-400"}`} 
+          strokeWidth={isActive ? 2.2 : 1.8} 
+        />
+        <span className={`text-[10px] font-semibold tracking-wide transition-colors ${isActive ? "text-[#f67f02] font-bold" : "text-gray-400"}`}>
+          {tab.label}
+        </span>
+      </button>
+    );
+  })}
+</div>
     </div>
   );
 }
