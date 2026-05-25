@@ -408,7 +408,7 @@ export default function MobileAppView() {
                 <ChevronRight className="w-4 h-4 text-gray-400" />
               </button>
 
-              <button className="w-full flex items-center justify-between p-4 hover:bg-red-50 active:bg-red-50 transition-colors group">
+              <button onClick={handleLogout} className="w-full flex items-center justify-between p-4 hover:bg-red-50 active:bg-red-50 transition-colors group">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded bg-red-50 group-hover:bg-red-100 flex items-center justify-center transition-colors">
                     <LogOut className="w-5 h-5 text-red-600" />
