@@ -6,10 +6,11 @@ import {
   GraduationCap, ChevronRight, Plane, Globe2, Hotel, Bus,
   Film, Cable, CalendarDays, Shield, Home, FileText,
   HelpCircle, LayoutGrid, Search, Bell, Bot, QrCode,
-  Eye, EyeOff, Star, Users2
+  Eye, EyeOff, Star, Users2, LogOut, User, Settings
 } from "lucide-react";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 const services = {
   utility: [
@@ -68,7 +69,6 @@ export default function MobileAppView() {
   const [activeTab, setActiveTab] = useState("home");
   const router = useRouter();
 
-  // ब्याकइन्ड रेस्पोन्सको टाइप संरचना
   const [user, setUser] = useState<{
     id: number;
     username: string;
@@ -90,23 +90,34 @@ export default function MobileAppView() {
     }
   }, []);
 
-  // ✅ १. यदि is_superuser = true छ भने मात्र एडमिन प्यानल देखिने लजिक
   const isSuperAdmin = user?.is_superuser === true;
-
-  // ✅ २. डिस्प्ले नेममा अनिवार्य ब्याकइन्डको "username" मात्र देखाउने
   const displayName = user?.username || "Guest User";
 
-  // युजरनेमको पहिलो दुई अक्षर लोगोमा राख्ने फङ्सन (जस्तै: superadmin -> SU)
   const getInitials = (name: string) => {
     const cleaned = name.trim();
     if (!cleaned) return "GU";
     return cleaned.slice(0, 2).toUpperCase();
   };
 
+  // 🌟 Logout फङ्सन (यसले सबै कुकिज हटाएर लगिनमा फर्काउँछ)
+  const handleLogout = () => {
+    Cookies.remove("auth_token");
+    Cookies.remove("user_info");
+    Cookies.remove("refresh_token");
+    
+    toast.success("Logged Out", {
+      description: "You have been safely logged out.",
+    });
+
+    // सफा रिडाइरेक्ट सुनिश्चित गर्न विन्डो रिफ्रेससहित रिडाइरेक्ट
+    window.location.href = "/login";
+  };
+
   return (
-    <div className="w-full min-h-screen bg-white flex flex-col relative">
-      {/* Header */}
-      <div className="bg-[#f67f02] px-4 pt-6 pb-4 shrink-0">
+    <div className="w-full h-screen bg-gray-50 flex flex-col overflow-hidden relative">
+      
+      {/* Mobile App Header */}
+      <div className="bg-[#f67f02] px-4 pt-6 pb-4 shrink-0 z-10 shadow-md">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center border-2 border-white/40">
@@ -117,7 +128,6 @@ export default function MobileAppView() {
             <div>
               <div className="text-white/70 text-[10px] flex items-center gap-1">
                 Welcome back 
-                {/* एडमिन ट्याग */}
                 {isSuperAdmin && (
                   <span className="bg-red-600 text-white font-extrabold px-1 rounded text-[8px]">
                     Admin Panel
@@ -181,65 +191,115 @@ export default function MobileAppView() {
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto bg-gray-50 pb-24">
-        <div className="space-y-3 p-3">
-          
-          {/* ✅ is_superuser === true हुँदा मात्र रेंडर हुने कार्ड ग्रिड */}
-          {isSuperAdmin && (
-            <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-100 rounded-2xl p-4 shadow-sm">
-              <h3 className="font-extrabold text-red-700 text-xs tracking-wider uppercase mb-3 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
-                Administrative Control Panel
-              </h3>
-              <div className="grid grid-cols-4 gap-y-5 gap-x-2 px-1">
-                <button 
-                  onClick={() => router.push("/admin/users")} 
-                  className="flex flex-col items-center gap-1.5 group"
-                >
-                  <div className="w-14 h-14 rounded-2xl bg-white border border-red-200 shadow-sm flex items-center justify-center group-active:bg-red-600 group-active:text-white transition-colors">
-                    <Users2 className="w-6 h-6 text-red-600 group-active:text-white" strokeWidth={1.5} />
+      {/* Scrollable Main Content Area */}
+      <div className="flex-1 overflow-y-auto bg-gray-50 pb-24 z-0">
+        
+        {/* 🌟 यदि "more" ट्याब एक्टिभ छ भने "More Menu" देखाउने, नत्र डिफल्ट होमपेज देखाउने */}
+        {activeTab === "more" ? (
+          <div className="p-4 space-y-4 animate-in fade-in duration-200">
+            <h3 className="font-bold text-gray-800 text-base mb-2 px-1">More Options</h3>
+            
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+              {/* Profile Option */}
+              <button className="w-full flex items-center justify-between p-4 hover:bg-gray-50 border-b border-gray-100 active:bg-gray-50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center"><User className="w-5 h-5 text-[#f67f02]" /></div>
+                  <div className="text-left">
+                    <p className="text-xs font-bold text-gray-800">My Profile</p>
+                    <p className="text-[10px] text-gray-400">View your account details</p>
                   </div>
-                  <span className="text-[10px] text-gray-800 text-center font-bold leading-tight whitespace-pre-line">
-                    Manage\nUsers
-                  </span>
-                </button>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-400" />
+              </button>
+
+              {/* Settings Option */}
+              <button className="w-full flex items-center justify-between p-4 hover:bg-gray-50 border-b border-gray-100 active:bg-gray-50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center"><Settings className="w-5 h-5 text-gray-600" /></div>
+                  <div className="text-left">
+                    <p className="text-xs font-bold text-gray-800">Settings</p>
+                    <p className="text-[10px] text-gray-400">Security and app settings</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-400" />
+              </button>
+
+              {/* 🛑 LOGOUT BUTTON */}
+              <button 
+                onClick={handleLogout}
+                className="w-full flex items-center justify-between p-4 hover:bg-red-50 active:bg-red-50 transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-red-50 group-hover:bg-red-100 flex items-center justify-center transition-colors">
+                    <LogOut className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-xs font-bold text-red-600">Logout</p>
+                    <p className="text-[10px] text-red-400">Sign out from SabitriPay</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-red-400" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* 🏠 डिफल्ट होम स्क्रिनको कन्टेन्ट (utility, travel, insurance, admin panel) */
+          <div className="space-y-3 p-3">
+            {isSuperAdmin && (
+              <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-100 rounded-2xl p-4 shadow-sm">
+                <h3 className="font-extrabold text-red-700 text-xs tracking-wider uppercase mb-3 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
+                  Administrative Control Panel
+                </h3>
+                <div className="grid grid-cols-4 gap-y-5 gap-x-2 px-1">
+                  <button 
+                    onClick={() => router.push("/admin/users")} 
+                    className="flex flex-col items-center gap-1.5 group"
+                  >
+                    <div className="w-14 h-14 rounded-2xl bg-white border border-red-200 shadow-sm flex items-center justify-center group-active:bg-red-600 group-active:text-white transition-colors">
+                      <Users2 className="w-6 h-6 text-red-600 group-active:text-white" strokeWidth={1.5} />
+                    </div>
+                    <span className="text-[10px] text-gray-800 text-center font-bold leading-tight whitespace-pre-line">
+                      Manage\nUsers
+                    </span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-white rounded-2xl p-4 shadow-sm">
+              <h3 className="font-bold text-gray-800 text-sm mb-4">Utility & Bill Payments</h3>
+              <ServiceGrid items={services.utility} />
+            </div>
+            
+            <div className="bg-white rounded-2xl p-4 shadow-sm">
+              <h3 className="font-bold text-gray-800 text-sm mb-4">Travels & Ticketing</h3>
+              <ServiceGrid items={services.travel} />
+            </div>
+
+            <div className="bg-white rounded-2xl p-4 shadow-sm">
+              <h3 className="font-bold text-gray-800 text-sm mb-4">Insurance</h3>
+              <div className="grid grid-cols-4 gap-y-5 gap-x-2 px-1">
+                {services.insurance.map((s, i) => {
+                  const Icon = s.icon;
+                  const colors = ["bg-green-50 text-green-600", "bg-blue-50 text-blue-600", "bg-purple-50 text-purple-600", "bg-red-50 text-red-600"];
+                  return (
+                    <button key={i} className="flex flex-col items-center gap-1.5 group">
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border border-gray-100 ${colors[i].split(' ')[0]}`}>
+                        <Icon className={`w-6 h-6 ${colors[i].split(' ')[1]}`} strokeWidth={1.5} />
+                      </div>
+                      <span className="text-[10px] text-gray-600 text-center leading-tight whitespace-pre-line font-medium">{s.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          )}
-
-          <div className="bg-white rounded-2xl p-4 shadow-sm">
-            <h3 className="font-bold text-gray-800 text-sm mb-4">Utility & Bill Payments</h3>
-            <ServiceGrid items={services.utility} />
           </div>
-          
-          <div className="bg-white rounded-2xl p-4 shadow-sm">
-            <h3 className="font-bold text-gray-800 text-sm mb-4">Travels & Ticketing</h3>
-            <ServiceGrid items={services.travel} />
-          </div>
-
-          <div className="bg-white rounded-2xl p-4 shadow-sm">
-            <h3 className="font-bold text-gray-800 text-sm mb-4">Insurance</h3>
-            <div className="grid grid-cols-4 gap-y-5 gap-x-2 px-1">
-              {services.insurance.map((s, i) => {
-                const Icon = s.icon;
-                const colors = ["bg-green-50 text-green-600", "bg-blue-50 text-blue-600", "bg-purple-50 text-purple-600", "bg-red-50 text-red-600"];
-                return (
-                  <button key={i} className="flex flex-col items-center gap-1.5 group">
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border border-gray-100 ${colors[i].split(' ')[0]}`}>
-                      <Icon className={`w-6 h-6 ${colors[i].split(' ')[1]}`} strokeWidth={1.5} />
-                    </div>
-                    <span className="text-[10px] text-gray-600 text-center leading-tight whitespace-pre-line font-medium">{s.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* Footer Nav */}
-      <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 pb-5 pt-2 flex items-center justify-around z-50">
+      {/* Fixed Bottom Navigation Bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 pb-5 pt-2 flex items-center justify-around z-50 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
         {[
           { id: "home", icon: Home, label: "Home" },
           { id: "statement", icon: FileText, label: "Statement" },
@@ -250,20 +310,21 @@ export default function MobileAppView() {
           const Icon = tab.icon;
           if (tab.id === "qr") {
             return (
-              <button key={tab.id} className="-mt-8 w-16 h-16 rounded-full bg-[#f67f02] flex items-center justify-center shadow-lg shadow-orange-300 border-4 border-white">
+              <button key={tab.id} className="-mt-8 w-16 h-16 rounded-full bg-[#f67f02] flex items-center justify-center shadow-lg shadow-orange-300 border-4 border-white active:scale-95 transition-transform">
                 <QrCode className="w-7 h-7 text-white" />
               </button>
             );
           }
           const isActive = activeTab === tab.id;
           return (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className="flex flex-col items-center gap-0.5 px-2 py-1 min-w-[50px]">
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className="flex flex-col items-center gap-0.5 px-2 py-1 min-w-[50px] active:scale-95 transition-transform">
               <Icon className={`w-6 h-6 ${isActive ? "text-[#f67f02]" : "text-gray-400"}`} strokeWidth={isActive ? 2 : 1.5} />
               <span className={`text-[10px] font-medium ${isActive ? "text-[#f67f02]" : "text-gray-400"}`}>{tab.label}</span>
             </button>
           );
         })}
       </div>
+
     </div>
   );
 }
