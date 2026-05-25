@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm, Controller, SubmitHandler } from "react-hook-form";
 import { Loader2, X, Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -29,6 +29,13 @@ export default function LoginPage() {
       rememberMe: false,
     },
   });
+
+  useEffect(() => {
+  const token = Cookies.get("auth_token");
+  if (token) {
+    router.replace("/dashboard");
+  }
+}, [router]);
 
  const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
     if (isLoading) return;
