@@ -1,12 +1,12 @@
-const CACHE_NAME = 'sabitri-kitchen-v3'; // 🌟 v3 संस्करण (पुराना क्यास बर्न गर्न)
+const CACHE_NAME = 'sabitri-kitchen-v4'; // 🌟 v4 संस्करण (पुराना त्रुटिपूर्ण क्यास बर्न गर्न)
 const STATIC_ASSETS = [
-  '/',
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
+  // यहाँ अरू इमेज वा फन्ट छन् भने राख्न सक्नुहुन्छ, तर '/' वा कुनै पनि पेज नराख्नुहोला
 ];
 
-// १. Install - static assets मात्र क्यास गर्ने
+// १. Install - केवल वास्तविक static assets मात्र क्यास गर्ने (No Pages)
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
@@ -24,13 +24,13 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// ३. Fetch - बुद्धिमानी नेटवर्क रणनीति (Bypass Dynamic Routes)
+// ३. Fetch - बुद्धिमानी नेटवर्क रणनीति
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
 
-  // 🛑 मुख्य फिक्स: रूट, API, Auth र ड्यासबोर्डलाई सर्भिस वर्कर क्यासबाट बाइपास गर्ने
+  // 🛑 मुख्य फिक्स: रूट, एपीआई, ड्यासबोर्ड र अथलाई क्यासबाट पूर्ण रूपमा बाइपास गरी सिधै नेटवर्कमा पठाउने
   if (
     url.pathname === '/' || 
     url.pathname.startsWith('/dashboard') ||
@@ -40,17 +40,27 @@ self.addEventListener('fetch', (event) => {
     return event.respondWith(fetch(event.request));
   }
 
-  // 🍏 नियम २: बाँकी रहेका Static Assets मात्र क्यास गर्ने
+  // 🍏 नियम २: बाँकी रहेका वास्तविक Assets (Icons, Images, Manifest) मात्र क्यासबाट दिने
   event.respondWith(
-    fetch(event.request)
-      .then((res) => {
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse; // यदि क्यासमा फाइल छ भने त्यहीँबाट दिने (Speed बढाउन)
+      }
+
+      return fetch(event.request).then((res) => {
         if (!res || res.status !== 200 || res.type !== 'basic') {
           return res;
         }
-        const clone = res.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        // केवल Static Extention (.png, .json, .css, .js) भएका रिक्वेस्ट मात्र रनटाइममा क्यास गर्ने
+        const isStaticFile = /\.(png|jpg|jpeg|gif|svg|ico|json|css|js)$/i.test(url.pathname);
+        
+        if (isStaticFile) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
         return res;
-      })
-      .catch(() => caches.match(event.request))
+      }).catch(() => caches.match(event.request))
+
+    })
   );
 });
