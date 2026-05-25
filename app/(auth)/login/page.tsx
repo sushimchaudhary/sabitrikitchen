@@ -110,7 +110,7 @@ export default function LoginPage() {
           {/* Close Button */}
           <button 
             type="button" 
-            onClick={() => router.push("/login")} 
+            onClick={() => router.push("/")} 
             className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition-colors z-10"
           >
             <X size={18} />
