@@ -4,21 +4,25 @@ import MobileAppView from "@/app/components/MobileAppView";
 import { useIsStandalone } from "@/app/hooks/useIsStandalone";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Cookies from "js-cookie"; // 🌟 js-cookie इम्पोर्ट गरियो
 
 export default function DashboardPage() {
   const router = useRouter();
   const isPWAStandalone = useIsStandalone();
   
   const [isMobileResponsive, setIsMobileResponsive] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null); // Loading state handle gर्न null राखिएको
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null); 
 
   useEffect(() => {
-    // 🔐 १. टोकन चेकिङ र अथेन्टिकेसन लजिक
-    // (यदि तपाईँ टोकन cookies वा अरू कतै राख्नुहुन्छ भने त्यही अनुसार `localStorage.getItem` लाई रिप्लेस गर्नुहोला)
-    const token = localStorage.getItem("access"); 
+    // 🔐 १. टोकन चेकिङ र अथेन्टिकेसन लजिक (लगिन पेजसँग म्याच गराइएको)
+    const token = Cookies.get("auth_token"); 
+
+    console.log("=== DASHBOARD AUTH CHECK ===");
+    console.log("Token from Cookie:", token ? "Found ✅" : "NOT FOUND ❌");
 
     if (!token) {
-      // टोकन छैन भने सिधै लगइन पेजमा पठाउने
+      // टोकन छैन भने कन्सोलमा म्यासेज फाल्ने र लगइनमा रिडाइरेक्ट गर्ने
+      console.warn("No auth_token found in cookies. Redirecting to /login...");
       setIsAuthenticated(false);
       router.replace("/login"); 
       return;
@@ -35,7 +39,7 @@ export default function DashboardPage() {
     return () => window.removeEventListener("resize", checkSize);
   }, [router]);
 
-  // जबसम्म टोकन चेक भएर सकिँदैन, तबसम्म ब्ल्यांक वा एउटा सामान्य लोडर देखाउने
+  // जबसम्म टोकन चेक भएर सकिँदैन, तबसम्म लोडर देखाउने
   if (isAuthenticated === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -44,7 +48,7 @@ export default function DashboardPage() {
     );
   }
 
-  // यदि लगइन भएको छैन भने केही पनि रेन्डर नगर्ने (रिडाइरेक्ट हुन्जेल सुरक्षित राख्न)
+  // यदि लगइन भएको छैन भने केही पनि रेन्डर नगर्ने
   if (!isAuthenticated) return null;
 
   // लगइन छ र मोबाइल स्क्रिन वा PWA हो भने मात्र MobileAppView खोल्ने

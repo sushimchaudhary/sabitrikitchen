@@ -8,7 +8,11 @@ export default function HeroBanner() {
   const [showSupport, setShowSupport] = useState(false);
 
   return (
+
+    
     <div className="relative w-full">
+
+      
       {/* Dynamic Banner Section */}
       <div className="relative w-full rounded-lg overflow-hidden shadow-sm group z-10">
         <Link href="#" className="block w-full">

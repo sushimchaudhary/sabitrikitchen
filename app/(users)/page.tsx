@@ -70,6 +70,14 @@ export default function Home() {
   // 2. Normal Web Browser Layout (Desktop Site view)
   return (
     <div className="min-h-screen bg-[#f5f5f5] w-full">
+      {/* 2. SECONDARY NAV */}
+      <div className="bg-[#f67f02] w-full shadow-sm relative z-40">
+        <div className="max-w-7xl mx-auto px-4 flex gap-6 py-2 text-sm font-semibold text-white overflow-x-auto scrollbar-none">
+          {["Top Up", "Airlines", "Internet Bill", "Load Fund"].map((item) => (
+            <a key={item} href="#" className="whitespace-nowrap hover:text-[#1e2227] transition-colors duration-150">{item}</a>
+          ))}
+        </div>
+      </div>
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-8">
         
         <div className="flex flex-col md:flex-row gap-4 items-start">

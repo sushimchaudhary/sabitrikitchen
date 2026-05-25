@@ -8,21 +8,20 @@ export default async function FrontendLayout({
   children: React.ReactNode;
 }) {
   return (
-    // FIX: Min-height component standard layout framework applied
     <div className="flex flex-col min-h-screen w-full relative">
       
-      {/* Navbar Container Wrapper Layer */}
-      {/* <div className="web-only-nav w-full z-50"> */}
+      {/* Navbar Wrapper */}
+      {/* <div className="w-full z-50"> */}
         <Navbar />
-      
+      {/* </div> */}
 
-      {/* Main Page dynamic dynamic components inject target context layout */}
+      {/* Main Page Content */}
       <main className="flex-grow w-full">
         {children}
       </main>
 
-      {/* Footer System wrapper framework positioning element */}
-      <div className="web-only-footer w-full mt-auto">
+      {/* Footer System: सधैँ र सबै डिभाइसमा देखिने */}
+      <div className="w-full mt-auto">
         <Footer />
       </div>
       

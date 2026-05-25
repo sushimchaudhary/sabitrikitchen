@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import React, { useState } from "react";
 import { useForm, Controller, SubmitHandler } from "react-hook-form";
@@ -30,57 +30,53 @@ export default function LoginPage() {
     },
   });
 
-  // 💡 पुराना म्यानुअल useState हरू हटाइयो (किनकी react-hook-form ले नै यसलाई म्यानेज गर्छ)
-
-  // ३. React Hook Form को बुझाई अनुसार onSubmit लाई अपडेट गरियो
-  const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
+ const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
     if (isLoading) return;
 
     setIsLoading(true);
     try {
+      // १. पुराना कुकिज सफा गर्ने
       Cookies.remove("auth_token");
-      Cookies.remove("user_info"); // पुरानो युजर डेटा क्लियर गर्ने
+      Cookies.remove("user_info"); 
+      Cookies.remove("refresh_token");
 
-      // data अब्जेक्टबाट सिधै भ्यालुहरू तानिएको
       const payload = {
         username: data.sabitriId,
         password: data.password,
       };
 
-      // १. लगिन रिक्वेस्ट
+      // २. लगिन रिक्वेस्ट
       const response = await axiosInstance.post("/auth/login/", payload);
       
       const token = response.data?.access; 
-      const userData = response.data?.user; // 🌟 ब्याकइन्डको user अब्जेक्ट
+      const userData = response.data?.user; 
 
       if (!token) {
         throw new Error("Access token not found in response.");
       }
 
-      // २. कुकिजमा access token सेभ गर्ने
-      Cookies.set("auth_token", token, { expires: 1, sameSite: "strict" });
+      // ३. कुकिजमा डेटा सेभ गर्ने (SameSite 'lax' वा 'strict' राख्ने तर ड्यासबोर्ड रिडाइरेक्टका लागि lax बढी सुरक्षित मानिन्छ)
+      Cookies.set("auth_token", token, { expires: 1, sameSite: "lax" });
       
-      // 🌟 ब्याकइन्डले दिएको user अब्जेक्टलाई JSON string बनाएर कुकीमा सेभ गर्ने
       if (userData) {
-        Cookies.set("user_info", JSON.stringify(userData), { expires: 1, sameSite: "strict" });
+        Cookies.set("user_info", JSON.stringify(userData), { expires: 1, sameSite: "lax" });
       }
 
       if (response.data?.refresh) {
-        Cookies.set("refresh_token", response.data.refresh, { expires: 7, sameSite: "strict" });
+        Cookies.set("refresh_token", response.data.refresh, { expires: 7, sameSite: "lax" });
       }
 
-      // ३. हेडर अपडेट
+      // ४. हेडर अपडेट
       axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-      // ४. टोस्ट म्यासेज
+      // ५. सफल टोस्ट म्यासेज
       const username = userData?.username || "User";
       toast.success(<strong>Welcome Back!</strong>, {
         description: `Logged in successfully as ${username}.`,
       });
 
-      // ५. ड्यासबोर्डमा रिडाइरेक्ट र फ्रेस डेटा लोड
-      router.push("/dashboard");
-      router.refresh();
+      // 🌟 ६. ड्यासबोर्डमा हार्ड रिडाइरेक्ट (यसले कुकी मिस हुने समस्या सतप्रतिशत हटाउँछ)
+      window.location.href = "/dashboard";
       
     } catch (exception: any) {
       const errorMsg = exception.response?.data?.message || "Invalid credentials. Try again.";
