@@ -14,7 +14,7 @@ export default function DashboardPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null); 
 
   useEffect(() => {
-    // 🛡️ १. कडा अथेन्टिकेसन चेकर फङ्सन
+    // 🛡️ १. अथेन्टिकेसन चेक गर्ने कडा फङ्सन
     const checkAuth = () => {
       const token = Cookies.get("auth_token"); 
 
@@ -24,10 +24,9 @@ export default function DashboardPage() {
       if (!token) {
         console.warn("No auth_token found. Redirecting to /login...");
         setIsAuthenticated(false);
-        router.replace("/login"); 
         
-        // 🌟 यदि ब्याक गरेर आएको विन्डो हो भने कडा रिडाइरेक्ट सुनिश्चित गर्न विन्डो नै ओभरराइड गरिदिने
-        window.location.href = "/login";
+        // ब्राउजरको हिस्ट्री नै क्लियर गरेर लगइनमा फाल्ने ताकि ब्याक गर्दा पनि नआओस्
+        window.location.replace("/login");
         return false;
       }
       
@@ -35,10 +34,10 @@ export default function DashboardPage() {
       return true;
     };
 
-    // पहिलो पटक पेज लोड हुँदा चेक गर्ने
+    // एप खुल्ने बित्तिकै टोकन चेक गर्ने
     const hasToken = checkAuth();
 
-    // 📱 २. स्क्रिन साइज चेकिङ लजिक (टोकन छ भने मात्र सेट गर्ने)
+    // 📱 २. टोकन छ भने मात्र स्क्रिन साइज ट्र्याक गर्ने
     if (hasToken) {
       const checkSize = () => setIsMobileResponsive(window.innerWidth < 768);
       checkSize();
@@ -48,14 +47,12 @@ export default function DashboardPage() {
     }
   }, [router]);
 
-  // 🌟 ३. म्याजिक लजिक: मोबाइलको BACK BUTTON र ब्राउजर क्यास (bfcache) ह्यान्डलर
+  // 🌟 ३. ब्याक बटन र बीएफक्यास (bfcache) को सुरक्षा (लगआउट पछि ब्याक गर्दा रोक्न)
   useEffect(() => {
     const handlePageShow = (event: PageTransitionEvent) => {
-      // यदि पेज ब्राउजरको मेमोरी/क्यास (Back Button थिचेर) बाट लोड भएको हो भने
       if (event.persisted || (typeof window !== "undefined" && window.performance && window.performance.navigation.type === 2)) {
         const token = Cookies.get("auth_token");
         if (!token) {
-          console.log("Back button cache detected without token. Redirecting...");
           window.location.replace("/login");
         }
       }
@@ -65,7 +62,7 @@ export default function DashboardPage() {
     return () => window.removeEventListener("pageshow", handlePageShow);
   }, []);
 
-  // जबसम्म टोकन चेक भएर सकिँदैन, तबसम्म लोडर देखाउने
+  // 🔄 लोडिङ स्टेट: जबसम्म टोकन चेक हुँदैन, तबसम्म स्पिनर मात्र देखाउने
   if (isAuthenticated === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -74,14 +71,18 @@ export default function DashboardPage() {
     );
   }
 
-  // यदि लगइन भएको छैन भने केही पनि रेन्डर नगर्ने
-  if (!isAuthenticated) return null;
+  // 🛑 मुख्य फिक्स: यदि युजर अथेन्टिकेटेड छैन (isAuthenticated === false) भने 
+  // तलको कुनै पनि भ्यू (MobileAppView वा Desktop View) रेन्डर गर्नै नदिने
+  if (isAuthenticated === false) {
+    return null;
+  }
 
-  // लगइन छ र मोबाइल स्क्रिन वा PWA हो भने मात्र MobileAppView खोल्ने
+  // ✅ टोकन १००% पक्का छ र मोबाइल स्क्रिन वा PWA हो भने मात्र भ्यू देखाउने
   if (isPWAStandalone || isMobileResponsive) {
     return <MobileAppView />;
   }
 
+  // डेस्कटप भ्यू
   return (
     <div className="p-8">
       <h1 className="text-xl font-bold text-[#364a63]">Desktop Dashboard View Layout System</h1>
