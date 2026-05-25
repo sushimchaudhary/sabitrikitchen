@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 
 const services = {
   utility: [
@@ -77,9 +76,19 @@ export default function MobileAppView() {
     is_staff: boolean;
     is_superuser: boolean;
   } | null>(null);
+  
+  const [hasCheckedAuth, setHasCheckedAuth] = useState(false); // 🌟 थपिएको सुरक्षा गार्ड स्टेट
 
   useEffect(() => {
+    const token = Cookies.get("auth_token");
     const userInfoRaw = Cookies.get("user_info");
+
+    // 🛑 टोकन छैन भने भित्र छिर्नै नदिने, सिधै लगइन फाल्ने
+    if (!token) {
+      window.location.href = "/login";
+      return;
+    }
+
     if (userInfoRaw) {
       try {
         const parsedUser = JSON.parse(userInfoRaw);
@@ -88,7 +97,26 @@ export default function MobileAppView() {
         console.error("Error parsing user context:", err);
       }
     }
+    setHasCheckedAuth(true);
   }, []);
+
+  // 🌟 टोकन भेरिफिकेसन अधुरो भएसम्म स्क्रिन पेन्ट नगर्ने
+  if (!hasCheckedAuth || !Cookies.get("auth_token")) {
+    return (
+      <div className="w-full h-screen bg-white flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-[#f67f02] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  const handleLogout = () => {
+    Cookies.remove("auth_token");
+    Cookies.remove("user_info");
+    Cookies.remove("refresh_token");
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.replace("/login");
+  };
 
   const isSuperAdmin = user?.is_superuser === true;
   const displayName = user?.first_name || "Guest User";
@@ -98,22 +126,6 @@ export default function MobileAppView() {
     if (!cleaned) return "GU";
     return cleaned.slice(0, 2).toUpperCase();
   };
-
-  // 🌟 Logout फङ्सन (यसले सबै कुकिज हटाएर लगिनमा फर्काउँछ)
- const handleLogout = () => {
-  // १. सबै कुकी सफा गर्ने
-  Cookies.remove("auth_token");
-  Cookies.remove("user_info");
-  Cookies.remove("refresh_token");
-
-  // २. लोकल स्टोरेज वा सेसन स्टोरेज केही छ भने सफा गर्ने
-  localStorage.clear();
-  sessionStorage.clear();
-  
-
-  // ३. हिस्ट्री नै बर्न (Burn) गरेर लगइनमा लैजाने
-  window.location.replace("/login");
-};
 
   return (
     <div className="w-full h-screen bg-gray-50 flex flex-col overflow-hidden relative">
@@ -195,14 +207,10 @@ export default function MobileAppView() {
 
       {/* Scrollable Main Content Area */}
       <div className="flex-1 overflow-y-auto bg-gray-50 pb-24 z-0">
-        
-        {/* 🌟 यदि "more" ट्याब एक्टिभ छ भने "More Menu" देखाउने, नत्र डिफल्ट होमपेज देखाउने */}
         {activeTab === "more" ? (
           <div className="p-4 space-y-4 animate-in fade-in duration-200">
             <h3 className="font-bold text-gray-800 text-base mb-2 px-1">More Options</h3>
-            
             <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
-              {/* Profile Option */}
               <button className="w-full flex items-center justify-between p-4 hover:bg-gray-50 border-b border-gray-100 active:bg-gray-50 transition-colors">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center"><User className="w-5 h-5 text-[#f67f02]" /></div>
@@ -214,7 +222,6 @@ export default function MobileAppView() {
                 <ChevronRight className="w-4 h-4 text-gray-400" />
               </button>
 
-              {/* Settings Option */}
               <button className="w-full flex items-center justify-between p-4 hover:bg-gray-50 border-b border-gray-100 active:bg-gray-50 transition-colors">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center"><Settings className="w-5 h-5 text-gray-600" /></div>
@@ -226,11 +233,7 @@ export default function MobileAppView() {
                 <ChevronRight className="w-4 h-4 text-gray-400" />
               </button>
 
-              {/* 🛑 LOGOUT BUTTON */}
-              <button 
-                onClick={handleLogout}
-                className="w-full flex items-center justify-between p-4 hover:bg-red-50 active:bg-red-50 transition-colors group"
-              >
+              <button onClick={handleLogout} className="w-full flex items-center justify-between p-4 hover:bg-red-50 active:bg-red-50 transition-colors group">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-red-50 group-hover:bg-red-100 flex items-center justify-center transition-colors">
                     <LogOut className="w-5 h-5 text-red-600" />
@@ -245,7 +248,6 @@ export default function MobileAppView() {
             </div>
           </div>
         ) : (
-          /* 🏠 डिफल्ट होम स्क्रिनको कन्टेन्ट (utility, travel, insurance, admin panel) */
           <div className="space-y-3 p-3">
             {isSuperAdmin && (
               <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-100 rounded-2xl p-4 shadow-sm">
@@ -254,16 +256,11 @@ export default function MobileAppView() {
                   Administrative Control Panel
                 </h3>
                 <div className="grid grid-cols-4 gap-y-5 gap-x-2 px-1">
-                  <button 
-                    onClick={() => router.push("/admin/users")} 
-                    className="flex flex-col items-center gap-1.5 group"
-                  >
+                  <button onClick={() => router.push("/admin/users")} className="flex flex-col items-center gap-1.5 group">
                     <div className="w-14 h-14 rounded-2xl bg-white border border-red-200 shadow-sm flex items-center justify-center group-active:bg-red-600 group-active:text-white transition-colors">
                       <Users2 className="w-6 h-6 text-red-600 group-active:text-white" strokeWidth={1.5} />
                     </div>
-                    <span className="text-[10px] text-gray-800 text-center font-bold leading-tight whitespace-pre-line">
-                      Manage\nUsers
-                    </span>
+                    <span className="text-[10px] text-gray-800 text-center font-bold leading-tight whitespace-pre-line">Manage\nUsers</span>
                   </button>
                 </div>
               </div>
@@ -326,7 +323,6 @@ export default function MobileAppView() {
           );
         })}
       </div>
-
     </div>
   );
 }

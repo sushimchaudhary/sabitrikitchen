@@ -2,7 +2,7 @@
 
 import MobileAppView from "@/app/components/MobileAppView";
 import { useIsStandalone } from "@/app/hooks/useIsStandalone";
-import { useState, useEffect, useLayoutEffect } from "react"; // 🌟 useLayoutEffect थपियो
+import { useState, useEffect, useLayoutEffect } from "react"; 
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 
@@ -13,12 +13,12 @@ export default function DashboardPage() {
   const [isMobileResponsive, setIsMobileResponsive] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null); 
 
-  // 🌟 म्याजिक फिक्स: स्क्रिन रेन्डर हुनु अगाडि नै (Flicker रोक्न) टोकन चेक गर्ने
+  // 🌟 म्याजिक फिक्स: स्क्रिन रेन्डर हुनु अगाडि नै टोकन चेक गर्ने (Flicker रोक्न)
   useLayoutEffect(() => {
     const token = Cookies.get("auth_token");
     if (!token) {
       setIsAuthenticated(false);
-      window.location.href = "/login"; // Hard redirect immediately
+      window.location.href = "/login"; // Immediate Hard Redirect
     } else {
       setIsAuthenticated(true);
     }
@@ -51,7 +51,7 @@ export default function DashboardPage() {
     return () => window.removeEventListener("pageshow", handlePageShow);
   }, []);
 
-  // जबसम्म टोकन पक्का हुँदैन, स्क्रिनमा केही पनि (इभन मोबाइल भ्यू) नदेखाउने
+  // जबसम्म टोकन पक्का हुँदैन, स्क्रिनमा केही पनि देखाउन नदिने
   if (isAuthenticated === null || isAuthenticated === false) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -64,6 +64,7 @@ export default function DashboardPage() {
     return <MobileAppView />;
   }
 
+  // डेस्कटप भ्यू
   return (
     <div className="p-8">
       <h1 className="text-xl font-bold text-[#364a63]">Desktop Dashboard View Layout System</h1>
