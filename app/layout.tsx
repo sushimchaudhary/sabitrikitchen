@@ -1,10 +1,8 @@
-// app/layout.tsx
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
-import Footer from "./components/Footer";
-import Navbar from "./components/Navbar";
 import PWARegister from "./components/PWARegister";
+import InstallBanner from "./components/InstallBanner";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 
@@ -53,19 +51,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Magic CSS to hide Web Nav/Footer inside standalone application window */}
         <style>{`
           @media (display-mode: standalone) {
-            .web-only-nav, .web-only-footer {
+            .web-only-nav, .web-only-footer, .pwa-install-banner {
               display: none !important;
             }
           }
         `}</style>
       </head>
-      <body>
-          
-          
+      <body className="relative">
           <PWARegister />
+          
+          <InstallBanner />
+          
           {children}
-          
-          
       </body>
     </html>
   );
