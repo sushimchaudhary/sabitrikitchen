@@ -2,7 +2,7 @@
 
 import MobileAppView from "@/app/components/MobileAppView";
 import { useIsStandalone } from "@/app/hooks/useIsStandalone";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect } from "react"; // 🌟 useLayoutEffect थपियो
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 
@@ -13,41 +13,30 @@ export default function DashboardPage() {
   const [isMobileResponsive, setIsMobileResponsive] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null); 
 
-  useEffect(() => {
-    // 🛡️ १. अथेन्टिकेसन चेक गर्ने कडा फङ्सन
-    const checkAuth = () => {
-      const token = Cookies.get("auth_token"); 
-
-      console.log("=== DASHBOARD AUTH CHECK ===");
-      console.log("Token from Cookie:", token ? "Found ✅" : "NOT FOUND ❌");
-
-      if (!token) {
-        console.warn("No auth_token found. Redirecting to /login...");
-        setIsAuthenticated(false);
-        
-        // ब्राउजरको हिस्ट्री नै क्लियर गरेर लगइनमा फाल्ने ताकि ब्याक गर्दा पनि नआओस्
-        window.location.replace("/login");
-        return false;
-      }
-      
+  // 🌟 म्याजिक फिक्स: स्क्रिन रेन्डर हुनु अगाडि नै (Flicker रोक्न) टोकन चेक गर्ने
+  useLayoutEffect(() => {
+    const token = Cookies.get("auth_token");
+    if (!token) {
+      setIsAuthenticated(false);
+      window.location.href = "/login"; // Hard redirect immediately
+    } else {
       setIsAuthenticated(true);
-      return true;
-    };
-
-    // एप खुल्ने बित्तिकै टोकन चेक गर्ने
-    const hasToken = checkAuth();
-
-    // 📱 २. टोकन छ भने मात्र स्क्रिन साइज ट्र्याक गर्ने
-    if (hasToken) {
-      const checkSize = () => setIsMobileResponsive(window.innerWidth < 768);
-      checkSize();
-      window.addEventListener("resize", checkSize);
-      
-      return () => window.removeEventListener("resize", checkSize);
     }
-  }, [router]);
+  }, []);
 
-  // 🌟 ३. ब्याक बटन र बीएफक्यास (bfcache) को सुरक्षा (लगआउट पछि ब्याक गर्दा रोक्न)
+  useEffect(() => {
+    const token = Cookies.get("auth_token");
+    if (!token) return;
+
+    // 📱 स्क्रिन साइज चेकिङ लजिक
+    const checkSize = () => setIsMobileResponsive(window.innerWidth < 768);
+    checkSize();
+    window.addEventListener("resize", checkSize);
+    
+    return () => window.removeEventListener("resize", checkSize);
+  }, [isAuthenticated]);
+
+  // बीएफक्यास (bfcache) र ब्याक बटन सुरक्षा
   useEffect(() => {
     const handlePageShow = (event: PageTransitionEvent) => {
       if (event.persisted || (typeof window !== "undefined" && window.performance && window.performance.navigation.type === 2)) {
@@ -62,8 +51,8 @@ export default function DashboardPage() {
     return () => window.removeEventListener("pageshow", handlePageShow);
   }, []);
 
-  // 🔄 लोडिङ स्टेट: जबसम्म टोकन चेक हुँदैन, तबसम्म स्पिनर मात्र देखाउने
-  if (isAuthenticated === null) {
+  // जबसम्म टोकन पक्का हुँदैन, स्क्रिनमा केही पनि (इभन मोबाइल भ्यू) नदेखाउने
+  if (isAuthenticated === null || isAuthenticated === false) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="w-6 h-6 border-2 border-[#f67f02] border-t-transparent rounded-full animate-spin" />
@@ -71,18 +60,10 @@ export default function DashboardPage() {
     );
   }
 
-  // 🛑 मुख्य फिक्स: यदि युजर अथेन्टिकेटेड छैन (isAuthenticated === false) भने 
-  // तलको कुनै पनि भ्यू (MobileAppView वा Desktop View) रेन्डर गर्नै नदिने
-  if (isAuthenticated === false) {
-    return null;
-  }
-
-  // ✅ टोकन १००% पक्का छ र मोबाइल स्क्रिन वा PWA हो भने मात्र भ्यू देखाउने
   if (isPWAStandalone || isMobileResponsive) {
     return <MobileAppView />;
   }
 
-  // डेस्कटप भ्यू
   return (
     <div className="p-8">
       <h1 className="text-xl font-bold text-[#364a63]">Desktop Dashboard View Layout System</h1>

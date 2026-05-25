@@ -100,18 +100,20 @@ export default function MobileAppView() {
   };
 
   // 🌟 Logout फङ्सन (यसले सबै कुकिज हटाएर लगिनमा फर्काउँछ)
-  const handleLogout = () => {
-    Cookies.remove("auth_token");
-    Cookies.remove("user_info");
-    Cookies.remove("refresh_token");
-    
-    toast.success("Logged Out", {
-      description: "You have been safely logged out.",
-    });
+ const handleLogout = () => {
+  // १. सबै कुकी सफा गर्ने
+  Cookies.remove("auth_token");
+  Cookies.remove("user_info");
+  Cookies.remove("refresh_token");
 
-    // सफा रिडाइरेक्ट सुनिश्चित गर्न विन्डो रिफ्रेससहित रिडाइरेक्ट
-    window.location.href = "/login";
-  };
+  // २. लोकल स्टोरेज वा सेसन स्टोरेज केही छ भने सफा गर्ने
+  localStorage.clear();
+  sessionStorage.clear();
+  
+
+  // ३. हिस्ट्री नै बर्न (Burn) गरेर लगइनमा लैजाने
+  window.location.replace("/login");
+};
 
   return (
     <div className="w-full h-screen bg-gray-50 flex flex-col overflow-hidden relative">
