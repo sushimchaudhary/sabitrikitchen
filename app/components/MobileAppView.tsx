@@ -91,7 +91,7 @@ export default function MobileAppView() {
   }, []);
 
   const isSuperAdmin = user?.is_superuser === true;
-  const displayName = user?.username || "Guest User";
+  const displayName = user?.first_name || "Guest User";
 
   const getInitials = (name: string) => {
     const cleaned = name.trim();
